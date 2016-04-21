@@ -6,7 +6,7 @@
 
 
 
-long int Premier(){
+long int PremierDeprecated(){
 	long int ligne = 0;
 	const int MAX = 5902412 , MIN = 0;
 	FILE* fichierNombres = NULL;
@@ -32,21 +32,37 @@ long int Premier(){
 	return -1;
 }
 
+void Premier(mpz_t Prime){
+	gmp_randstate_t state;
+	gmp_randinit_default(state);
+	gmp_randseed_ui(state, time(NULL));
+
+	do{
+		mpz_urandomb(Prime, state, 32);
+	}while(mpz_probab_prime_p(Prime, 40) != 1);
+	gmp_printf("%Zd\n", Prime);
+}
+
 void CharConverter(int compt){
 	FILE* File = NULL;
-	File = fopen("output.txt", "r");
+	File = fopen("output.txt", "r+");
 	int test;
 	int i;
 	char buff;
 	char buff2;
+	char string[400];
 	rewind(File);
 	for (i = 0; i < compt; i++){
 		buff = fgetc(File);
 		buff2 = fgetc(File);
 		test = ((buff-48)*10)+(buff2-48);
 		buff = (test+55);
-		printf("%c", buff);
+		string[i] = buff;
+		printf("%c\n", buff);
 	}
+	fclose(File);
+	File = fopen("output.txt", "w");
+	fputs(string, File);
 	printf("\n");
 }
 
@@ -57,8 +73,8 @@ int main (){
 
 	char input ='A';
 
-	unsigned long long int swapPrems;
-	unsigned long long int swapPrems2;
+	//unsigned long long int swapPrems;
+	//unsigned long long int swapPrems2;
 
 	int compt=0;
 
@@ -93,15 +109,19 @@ int main (){
 	mpz_init(Output);
 
 	srand(time(NULL));
+	
 
+	Premier(Prems);
+	Premier(Prems2);
+	/*
 	swapPrems = Premier();
 	mpz_set_ui(Prems, swapPrems);
 	gmp_printf("Prems = %Zd\n", Prems);	 
-
+	
 	swapPrems2 = Premier();
 	mpz_set_ui(Prems2, swapPrems2);	
 	gmp_printf("Prems 2 = %Zd\n", Prems2);
-
+	*/
 	mpz_mul (module, Prems, Prems2);
 	mpz_sub (Buffer, Prems, One);
 	mpz_sub (Buffer2, Prems2, One);
@@ -109,7 +129,7 @@ int main (){
 
 	mpz_invert(eDechifrement, exposant, phi);
 
-	gmp_printf("PHI : %Zd\nMODULE : %Zd\nEXPOSANT DE CHIFFREMENT : %Zd\nEXPOSANT DE DECHIFREMENT : %Zd \n", phi, module, exposant, eDechifrement);		
+	gmp_printf("PHI : %Zd\nMODULE : %Zd\nEXPOSANT DE CHIFFREMENT : %Zd\nEXPOSANT DE DECHIFFREMENT : %Zd \n", phi, module, exposant, eDechifrement);		
 	//TODO : The message must be < module else lost info, crypt message by block
 	fInput = fopen ("input.txt", "r");
 	fOutput = fopen("output.txt", "w+");
@@ -118,11 +138,8 @@ int main (){
 		if (input == ' ' || input == 10){
 			continue;
 		}
-		printf("Letter : %c\n", input);
 		input=input-55;
 		fprintf(fOutput, "%d", input);
-		printf("%d\n", input);
-		compt++;
 	}
 	fclose(fOutput);
 	fOutput = fopen("output.txt", "r");
@@ -133,9 +150,27 @@ int main (){
 	gmp_printf("Clear: %Zd\n", Buffer);
 	mpz_powm (Output, Buffer, exposant, module);
 	gmp_printf("Encrypted: %Zd\n", Output);
-	mpz_out_str (fOutput, 0, Output);
-	printf("Encryption Finished\n");
 
+	fclose(fOutput);
+	fOutput = fopen("output.txt", "w");
+	mpz_out_str (fOutput, 0, Output);
+	fclose(fOutput);
+	fOutput = fopen("output.txt", "r");
+	
+	rewind(fOutput);
+	input = fgetc(fOutput);
+	while (input != EOF){
+		input = fgetc(fOutput);
+		//printf("%d\n", input);
+		compt++;
+	}
+	compt = (compt/2) - 1;
+	printf("%d\n", compt);
+	CharConverter(compt);
+	input = 'A';
+	fputc(input, fOutput);
+	printf("Encryption Finished\n");
+	fclose(fOutput);
 
 
 	return 0;
